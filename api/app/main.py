@@ -186,6 +186,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/api/auth/login", response_model=Token)
 @app.post("/auth/login", response_model=Token)
+@app.post("/api/index.py", response_model=Token)
+@app.post("/index.py", response_model=Token)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == login_data.email).first()
     if not user or not verify_password(login_data.password, user.password_hash):
