@@ -3,14 +3,21 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from .config import settings
 
-# SQLite connection requires special argument check_same_thread=False
 connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 
-engine = create_engine(
-    settings.DATABASE_URL, connect_args=connect_args
-)
+try:
+    engine = create_engine(
+        settings.DATABASE_URL, connect_args=connect_args
+    )
+    with engine.connect() as conn:
+        pass
+except Exception:
+    # Fallback to in-memory SQLite if filesystem write fails on serverless container
+    engine = create_engine(
+        "sqlite:///:memory:", connect_args={"check_same_thread": False}
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
