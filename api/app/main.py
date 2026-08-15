@@ -17,7 +17,7 @@ from .schemas import (
 from .auth import get_password_hash, verify_password, create_access_token, get_current_user, require_role
 from .ai import analyze_complaint
 
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(title=settings.PROJECT_NAME, root_path="/api")
 
 # Health check endpoints for Vercel diagnostic verification
 @app.get("/api/health")
