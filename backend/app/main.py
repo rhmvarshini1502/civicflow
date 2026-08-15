@@ -31,6 +31,14 @@ app.add_middleware(
 # Initialize database tables on startup
 Base.metadata.create_all(bind=engine)
 
+@app.on_event("startup")
+def auto_seed_on_startup():
+    try:
+        from .seed import seed_db
+        seed_db()
+    except Exception as e:
+        print("Auto-seed notification:", e)
+
 
 # --- SLA Deadline & Escalation Engine Helper ---
 
