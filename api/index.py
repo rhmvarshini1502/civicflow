@@ -14,3 +14,6 @@ try:
     from app.main import app
 except Exception:
     from backend.app.main import app
+
+# Export app / handler for Vercel serverless function entrypoint
+handler = app

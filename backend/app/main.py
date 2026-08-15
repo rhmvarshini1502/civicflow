@@ -40,14 +40,24 @@ def auto_seed_on_startup():
         print("Auto-seed notification:", e)
 
 
-# --- SLA Deadline & Escalation Engine Helper ---
+def ensure_db_seeded(db: Session):
+    try:
+        if db.query(User).first() is None:
+            from .seed import seed_db
+            seed_db()
+    except Exception as e:
+        print("Ensure seed notification:", e)
 
 def run_escalation_checks(db: Session):
     """
     Scans the database for active complaints that have breached their SLA deadline
     and applies simulated escalation workflows (Supervisor alert -> Higher Authority alert) in real time.
     """
+    ensure_db_seeded(db)
     now = datetime.datetime.utcnow()
+    
+    admin_user = db.query(User).filter(User.role == "admin").first()
+    sys_user_id = admin_user.id if admin_user else 1
     
     # Active complaints are those not Resolved or Closed, where deadline is in the past
     overdue_complaints = db.query(Complaint).filter(
@@ -75,7 +85,7 @@ def run_escalation_checks(db: Session):
                 complaint_id=comp.id,
                 old_status=comp.status,
                 new_status=comp.status,
-                changed_by=1,  # System user ID / Admin fallback
+                changed_by=sys_user_id,
                 notes="SLA threshold breached: Escalated to Department Supervisor.",
                 timestamp=comp.deadline + datetime.timedelta(hours=1)
             )
