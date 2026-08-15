@@ -10,8 +10,8 @@ class Settings:
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days for demo convenience
     
-    # Database URL: use /tmp/civicflow.db on Vercel read-only filesystem
-    default_db = "sqlite:////tmp/civicflow.db" if os.getenv("VERCEL") else "sqlite:///./civicflow.db"
+    # Database URL: use in-memory SQLite with StaticPool on Vercel for zero disk lock errors
+    default_db = "sqlite:///:memory:" if os.getenv("VERCEL") else "sqlite:///./civicflow.db"
     DATABASE_URL: str = os.getenv("DATABASE_URL", default_db)
     
     # Gemini AI Key
