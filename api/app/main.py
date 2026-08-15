@@ -27,8 +27,14 @@ async def vercel_routing_middleware(request, call_next):
         request.scope["path"] = f"/api{clean_path}" if not clean_path.startswith("/api") else clean_path
     else:
         raw_path = request.scope.get("path", "")
-        if raw_path in ["/api/index.py", "/index.py", "/api"]:
-            original_uri = request.headers.get("x-forwarded-uri") or request.headers.get("x-matched-path")
+        if raw_path in ["/api/index.py", "/index.py", "/api", "/api/"]:
+            headers = request.headers
+            original_uri = (
+                headers.get("x-forwarded-uri") or 
+                headers.get("x-matched-path") or 
+                headers.get("x-invoke-path") or 
+                ""
+            )
             if original_uri:
                 request.scope["path"] = original_uri.split("?")[0]
     return await call_next(request)
