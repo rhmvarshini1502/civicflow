@@ -19,6 +19,13 @@ from .ai import analyze_complaint
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
+@app.middleware("http")
+async def vercel_routing_middleware(request, call_next):
+    original_uri = request.headers.get("x-forwarded-uri") or request.headers.get("x-matched-path")
+    if original_uri:
+        request.scope["path"] = original_uri.split("?")[0]
+    return await call_next(request)
+
 # Health check endpoints for Vercel diagnostic verification
 @app.get("/api/health")
 @app.get("/health")
