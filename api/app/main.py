@@ -19,10 +19,16 @@ from .ai import analyze_complaint
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
+# Health check endpoints for Vercel diagnostic verification
+@app.get("/api/health")
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "project": settings.PROJECT_NAME, "version": "1.0.0"}
+
 # Enable CORS for the React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify the exact domains
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -579,6 +585,7 @@ def verify_complaint(
 # --- Dashboard / Analytics Endpoints ---
 
 @app.get("/api/dashboard/public")
+@app.get("/dashboard/public")
 def get_public_analytics(db: Session = Depends(get_db)):
     """
     Returns public accountability dashboard statistics:
