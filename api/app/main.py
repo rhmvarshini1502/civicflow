@@ -17,10 +17,11 @@ from .schemas import (
 from .auth import get_password_hash, verify_password, create_access_token, get_current_user, require_role
 from .ai import analyze_complaint
 
-app = FastAPI(title=settings.PROJECT_NAME, root_path="/api")
+app = FastAPI(title=settings.PROJECT_NAME)
 
 # Health check endpoints for Vercel diagnostic verification
 @app.get("/api/health")
+@app.get("/health")
 @app.get("/health")
 def health_check():
     return {"status": "ok", "project": settings.PROJECT_NAME, "version": "1.0.0"}
@@ -140,6 +141,7 @@ def run_escalation_checks(db: Session):
 # --- Authentication Endpoints ---
 
 @app.post("/api/auth/register", response_model=UserResponse)
+@app.post("/auth/register", response_model=UserResponse)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
@@ -163,6 +165,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 @app.post("/api/auth/login", response_model=Token)
+@app.post("/auth/login", response_model=Token)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == login_data.email).first()
     if not user or not verify_password(login_data.password, user.password_hash):
@@ -178,6 +181,7 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.get("/api/auth/profile")
+@app.get("/auth/profile")
 def get_profile(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Run SLA checks to ensure numbers are updated
     run_escalation_checks(db)
@@ -217,6 +221,7 @@ def get_profile(current_user: User = Depends(get_current_user), db: Session = De
 # --- Complaint Endpoints ---
 
 @app.post("/api/complaints/check-duplicate")
+@app.post("/complaints/check-duplicate")
 def check_duplicate(data: dict, db: Session = Depends(get_db)):
     """
     Checks if a complaint of the same category has already been reported nearby (~150 meters).
@@ -258,6 +263,7 @@ def check_duplicate(data: dict, db: Session = Depends(get_db)):
     }
 
 @app.post("/api/complaints", response_model=ComplaintResponse)
+@app.post("/complaints", response_model=ComplaintResponse)
 def create_new_complaint(
     complaint_data: ComplaintCreate,
     current_user: User = Depends(get_current_user),
@@ -348,6 +354,7 @@ def create_new_complaint(
     return new_comp
 
 @app.get("/api/complaints", response_model=List[ComplaintResponse])
+@app.get("/complaints", response_model=List[ComplaintResponse])
 def get_complaints(
     category: Optional[str] = None,
     status: Optional[str] = None,
@@ -390,6 +397,7 @@ def get_complaints(
     return query.order_by(desc(Complaint.created_at)).all()
 
 @app.get("/api/complaints/{complaint_id}", response_model=ComplaintDetailResponse)
+@app.get("/complaints/{complaint_id}", response_model=ComplaintDetailResponse)
 def get_complaint_by_id(complaint_id: int, db: Session = Depends(get_db)):
     # Trigger escalation updates
     run_escalation_checks(db)
@@ -400,6 +408,7 @@ def get_complaint_by_id(complaint_id: int, db: Session = Depends(get_db)):
     return comp
 
 @app.put("/api/complaints/{complaint_id}/status")
+@app.put("/complaints/{complaint_id}/status")
 def update_complaint_status(
     complaint_id: int,
     data: ComplaintStatusUpdate,
@@ -470,6 +479,7 @@ def update_complaint_status(
     return {"message": f"Complaint status successfully updated to {new_status}"}
 
 @app.post("/api/complaints/{complaint_id}/support")
+@app.post("/complaints/{complaint_id}/support")
 def support_complaint(
     complaint_id: int,
     current_user: User = Depends(get_current_user),
@@ -501,6 +511,7 @@ def support_complaint(
     return {"message": "You supported this complaint successfully.", "support_count": comp.support_count}
 
 @app.post("/api/complaints/{complaint_id}/verify")
+@app.post("/complaints/{complaint_id}/verify")
 def verify_complaint(
     complaint_id: int,
     data: VerificationCreate,
@@ -586,6 +597,7 @@ def verify_complaint(
 
 @app.get("/api/dashboard/public")
 @app.get("/dashboard/public")
+@app.get("/dashboard/public")
 def get_public_analytics(db: Session = Depends(get_db)):
     """
     Returns public accountability dashboard statistics:
@@ -666,6 +678,7 @@ def get_public_analytics(db: Session = Depends(get_db)):
     }
 
 @app.get("/api/dashboard/admin")
+@app.get("/dashboard/admin")
 def get_admin_dashboard(current_user: User = Depends(require_role(["admin"])), db: Session = Depends(get_db)):
     """
     Returns secure administrative KPI charts and metrics, and escalation cases.
@@ -707,12 +720,14 @@ def get_admin_dashboard(current_user: User = Depends(require_role(["admin"])), d
 # --- Notifications ---
 
 @app.get("/api/notifications", response_model=List[NotificationResponse])
+@app.get("/notifications", response_model=List[NotificationResponse])
 def get_notifications(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(Notification).filter(
         Notification.user_id == current_user.id
     ).order_by(desc(Notification.created_at)).limit(30).all()
 
 @app.put("/api/notifications/{notification_id}/read")
+@app.put("/notifications/{notification_id}/read")
 def mark_notification_read(
     notification_id: int,
     current_user: User = Depends(get_current_user),
@@ -734,6 +749,7 @@ def mark_notification_read(
 # --- AI Service raw tester endpoint ---
 
 @app.post("/api/ai/analyze", response_model=AIAnalyzeResponse)
+@app.post("/ai/analyze", response_model=AIAnalyzeResponse)
 def api_ai_analyze(request: AIAnalyzeRequest):
     res = analyze_complaint(request.description, request.image_url)
     return res
