@@ -87,7 +87,11 @@ async function safeFetch(url, options, fallbackFn) {
     if (res.ok) {
       const contentType = res.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
-        return await res.json();
+        try {
+          return await res.json();
+        } catch (jsonErr) {
+          console.warn("Response was OK but JSON parsing failed:", jsonErr);
+        }
       }
     }
   } catch (err) {
